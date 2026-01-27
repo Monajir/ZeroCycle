@@ -1,0 +1,70 @@
+﻿@page
+@model SmartWaste.Web.Areas.Identity.Pages.Account.LoginModel
+@{
+    ViewData["Title"] = Model.LoginAsTitle;
+}
+
+<div class="text-center mb-3">
+    <h2 style="font-weight:900; margin-bottom:6px;">@Model.LoginAsTitle</h2>
+    <div style="color:#64748b;">Enter your credentials to continue.</div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-12" style="max-width: 460px;">
+        <form id="account" method="post" class="card-soft p-4">
+            @Html.AntiForgeryToken()
+
+            <div asp-validation-summary="ModelOnly" class="text-danger mb-2"></div>
+
+            <!-- Email -->
+            <div class="mb-3">
+                <label class="form-label" for="emailInput" style="font-weight:700;">Email</label>
+                <input id="emailInput"
+                       asp-for="Input.Email"
+                       class="form-control"
+                       autocomplete="username"
+                       placeholder="e.g. operator@smartwaste.local" />
+                <span asp-validation-for="Input.Email" class="text-danger"></span>
+            </div>
+
+            <!-- Password -->
+            <div class="mb-3">
+                <label class="form-label" for="passwordInput" style="font-weight:700;">Password</label>
+                <input id="passwordInput"
+                       asp-for="Input.Password"
+                       class="form-control"
+                       autocomplete="current-password"
+                       placeholder="Enter your password" />
+                <span asp-validation-for="Input.Password" class="text-danger"></span>
+            </div>
+
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <!-- Remember Me -->
+                <div class="form-check">
+                    <input class="form-check-input" asp-for="Input.RememberMe" />
+                    <label class="form-check-label" asp-for="Input.RememberMe">
+                        Remember me
+                    </label>
+                </div>
+
+                <a id="forgot-password" href="./ForgotPassword" style="font-weight:600;">
+                    Forgot password?
+                </a>
+            </div>
+
+            <button id="login-submit" type="submit" class="btn btn-primary btn-soft w-100">
+                <i class="bi bi-box-arrow-in-right"></i> Log in
+            </button>
+
+            <div class="text-center mt-3">
+                <a href="/Auth" style="color:#64748b;">← Back to role selection</a>
+            </div>
+
+            <input type="hidden" name="returnUrl" value="@Model.ReturnUrl" />
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
