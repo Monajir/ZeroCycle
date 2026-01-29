@@ -1,0 +1,3 @@
+﻿<Project>
+  <Import Project="..\build\SmartWaste.Web.props" />
+</Project>
