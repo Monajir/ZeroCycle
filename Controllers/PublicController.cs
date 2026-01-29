@@ -71,8 +71,7 @@ namespace SmartWaste.Web.Controllers
                     DistanceMeters = reader.GetInt32(reader.GetOrdinal("DistanceMeters"))
                 });
             }
-
-            // Return JSON response
+            
             return Json(results);
         }
     }

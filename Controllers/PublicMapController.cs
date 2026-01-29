@@ -21,17 +21,21 @@ namespace SmartWaste.Web.Controllers
             var cs = _config.GetConnectionString("DefaultConnection");
             var results = new List<PublicBinDto>();
 
+            // Open connection
             await using var conn = new SqlConnection(cs);
             await conn.OpenAsync();
 
+            // Create command and set parameters
             await using var cmd = new SqlCommand("dbo.sp_Public_GetBinsNear", conn);
             cmd.CommandType = CommandType.StoredProcedure;
 
+            // Set parameters
             cmd.Parameters.AddWithValue("@Latitude", lat);
             cmd.Parameters.AddWithValue("@Longitude", lng);
             cmd.Parameters.AddWithValue("@RadiusKm", radiusKm);
             cmd.Parameters.AddWithValue("@MaxResults", maxResults);
 
+            // Execute the stored procedure
             await using var reader = await cmd.ExecuteReaderAsync();
             while (await reader.ReadAsync())
             {
