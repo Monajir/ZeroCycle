@@ -29,23 +29,28 @@ namespace SmartWaste.Web.Controllers
             if (radiusMeters < 50) radiusMeters = 50;
             if (radiusMeters > 5000) radiusMeters = 5000;
 
+            // Get connection string
             var cs = _config.GetConnectionString("DefaultConnection");
             if (string.IsNullOrWhiteSpace(cs))
                 return Problem("DefaultConnection is missing.");
 
             var results = new List<NearbyBinDto>();
 
+            // Open connection
             await using var conn = new SqlConnection(cs);
             await conn.OpenAsync();
 
+            // Create command and set parameters
             await using var cmd = new SqlCommand("dbo.sp_GetNearbyBins", conn);
             cmd.CommandType = System.Data.CommandType.StoredProcedure;
-
+            
+            // Set parameters
             cmd.Parameters.AddWithValue("@Latitude", lat);
             cmd.Parameters.AddWithValue("@Longitude", lng);
             cmd.Parameters.AddWithValue("@RadiusMeters", radiusMeters);
             cmd.Parameters.AddWithValue("@StatusId", (object?)statusId ?? DBNull.Value);
 
+            // Execute the stored procedure
             await using var reader = await cmd.ExecuteReaderAsync();
             while (await reader.ReadAsync())
             {
@@ -67,6 +72,7 @@ namespace SmartWaste.Web.Controllers
                 });
             }
 
+            // Return JSON response
             return Json(results);
         }
     }
