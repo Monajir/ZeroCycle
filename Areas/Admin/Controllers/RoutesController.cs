@@ -1,9 +1,10 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
 using SmartWaste.Web.Models;
 using System.Data;
 using System.Globalization;
+using System.Text.Json;
 
 
 namespace SmartWaste.Web.Areas.Admin.Controllers
@@ -170,6 +171,15 @@ ORDER BY r.RouteId DESC;";
             return Json(results);
         }
 
+        // 5b) JSON: real-world route line for map
+        [HttpGet]
+        public async Task<IActionResult> RouteLine(int id)
+        {
+            var cs = _config.GetConnectionString("DefaultConnection");
+            var latLngs = await GetRouteLineLatLngs(cs, id);
+            return Json(latLngs);
+        }
+
         // Start route
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -291,6 +301,46 @@ ORDER BY r.RouteId DESC;";
             }
 
             return results;
+        }
+
+        private async Task<List<double[]>> GetRouteLineLatLngs(string cs, int routeId)
+        {
+            var stops = await LoadRouteStops(cs, routeId);
+            var orderedStops = stops.OrderBy(s => s.StopOrder).ToList();
+            if (orderedStops.Count < 2)
+                return new List<double[]>();
+
+            var coordPairs = orderedStops
+                .Select(s => $"{s.Longitude.ToString(CultureInfo.InvariantCulture)},{s.Latitude.ToString(CultureInfo.InvariantCulture)}")
+                .ToArray();
+
+            var url = $"https://router.project-osrm.org/route/v1/driving/{string.Join(";", coordPairs)}?overview=full&geometries=geojson";
+
+            using var http = new HttpClient();
+            using var response = await http.GetAsync(url);
+            if (!response.IsSuccessStatusCode)
+                return new List<double[]>();
+
+            await using var stream = await response.Content.ReadAsStreamAsync();
+            using var doc = await JsonDocument.ParseAsync(stream);
+
+            if (!doc.RootElement.TryGetProperty("routes", out var routes) || routes.GetArrayLength() == 0)
+                return new List<double[]>();
+
+            var geometry = routes[0].GetProperty("geometry");
+            if (!geometry.TryGetProperty("coordinates", out var coords))
+                return new List<double[]>();
+
+            var latLngs = new List<double[]>();
+            foreach (var coord in coords.EnumerateArray())
+            {
+                if (coord.GetArrayLength() < 2) continue;
+                var lng = coord[0].GetDouble();
+                var lat = coord[1].GetDouble();
+                latLngs.Add(new[] { lat, lng });
+            }
+
+            return latLngs;
         }
 
         [HttpPost]
