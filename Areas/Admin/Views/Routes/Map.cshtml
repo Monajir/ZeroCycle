@@ -1,4 +1,4 @@
-﻿@model SmartWaste.Web.Models.RouteMapPageViewModel
+@model SmartWaste.Web.Models.RouteMapPageViewModel
 @using System.Text.Json
 
 @{
@@ -173,10 +173,28 @@
             });
 
             if (latlngs.length > 1) {
-                routeLine = L.polyline(latlngs).addTo(stopsLayer);
+                routeLine = L.polyline(latlngs, { color: "#90a4ae", weight: 3, dashArray: "6,6" }).addTo(stopsLayer);
                 map.fitBounds(routeLine.getBounds(), { padding: [20, 20] });
             } else if (latlngs.length === 1) {
                 map.setView(latlngs[0], 16);
+            }
+        }
+
+        async function drawRealRouteLine() {
+            try {
+                const res = await fetch(`/Admin/Routes/RouteLine/${routeId}`);
+                if (!res.ok) return;
+                const realLine = await res.json();
+                if (!Array.isArray(realLine) || realLine.length < 2) return;
+
+                if (routeLine) {
+                    stopsLayer.removeLayer(routeLine);
+                }
+
+                routeLine = L.polyline(realLine, { color: "#1565c0", weight: 4 }).addTo(stopsLayer);
+                map.fitBounds(routeLine.getBounds(), { padding: [20, 20] });
+            } catch (e) {
+                console.error(e);
             }
         }
 
@@ -199,6 +217,7 @@
         document.getElementById("toggleBins").addEventListener("change", (e) => e.target.checked ? map.addLayer(binsLayer) : map.removeLayer(binsLayer));
 
         drawRouteStops();
+        await drawRealRouteLine();
         await loadZoneBins();
     });
 </script>
